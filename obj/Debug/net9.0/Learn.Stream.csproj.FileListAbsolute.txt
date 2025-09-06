@@ -76,3 +76,4 @@ C:\Users\p.ansari\RiderProjects\Learn.Stream\Learn.Stream\obj\Debug\net9.0\refin
 C:\Users\p.ansari\RiderProjects\Learn.Stream\Learn.Stream\obj\Debug\net9.0\Learn.Stream.pdb
 C:\Users\p.ansari\RiderProjects\Learn.Stream\Learn.Stream\obj\Debug\net9.0\Learn.Stream.genruntimeconfig.cache
 C:\Users\p.ansari\RiderProjects\Learn.Stream\Learn.Stream\obj\Debug\net9.0\ref\Learn.Stream.dll
+C:\Users\p.ansari\RiderProjects\Learn.Stream\Learn.Stream\obj\Debug\net9.0\Learn.Stream.sourcelink.json

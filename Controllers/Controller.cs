@@ -10,43 +10,22 @@ namespace Learn.Stream.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public class VideoStreamController : ControllerBase
+public class VideoStreamController(
+    IContentTypeProvider contentTypeProvider,
+    ILogger<VideoStreamController> logger,
+    IMemoryCache cache,
+    IConfiguration configuration,
+    VideoAnalyticsService analytics,
+    AdaptiveBitrateManager abrManager,
+    CdnManager cdnManager,
+    SecurityManager security,
+    VideoMetadataService metadata)
+    : ControllerBase
 {
-    private readonly IContentTypeProvider _contentTypeProvider;
-    private readonly ILogger<VideoStreamController> _logger;
-    private readonly IMemoryCache _cache;
-    private readonly IConfiguration _configuration;
-    private readonly VideoAnalyticsService _analytics;
-    private readonly AdaptiveBitrateManager _abrManager;
-    private readonly CdnManager _cdnManager;
-    private readonly SecurityManager _security;
-    private readonly VideoMetadataService _metadata;
-    private readonly string _videoPath;
-    private readonly string _manifestPath;
-
-    public VideoStreamController(
-        IContentTypeProvider contentTypeProvider,
-        ILogger<VideoStreamController> logger,
-        IMemoryCache cache,
-        IConfiguration configuration,
-        VideoAnalyticsService analytics,
-        AdaptiveBitrateManager abrManager,
-        CdnManager cdnManager,
-        SecurityManager security,
-        VideoMetadataService metadata)
-    {
-        _contentTypeProvider = contentTypeProvider;
-        _logger = logger;
-        _cache = cache;
-        _configuration = configuration;
-        _analytics = analytics;
-        _abrManager = abrManager;
-        _cdnManager = cdnManager;
-        _security = security;
-        _metadata = metadata;
-        _videoPath = configuration["VideoPath"] ?? "wwwroot/videos";
-        _manifestPath = configuration["ManifestPath"] ?? "wwwroot/manifests";
-    }
+    private readonly IContentTypeProvider _contentTypeProvider = contentTypeProvider;
+    private readonly IConfiguration _configuration = configuration;
+    private readonly string _videoPath = configuration["VideoPath"] ?? "wwwroot/videos";
+    private readonly string _manifestPath = configuration["ManifestPath"] ?? "wwwroot/manifests";
 
     #region Adaptive Streaming (HLS/DASH-like)
 
@@ -63,14 +42,14 @@ public class VideoStreamController : ControllerBase
         try
         {
             // Security validation
-            var clientInfo = await _security.ValidateClientAsync(Request, videoId);
+            var clientInfo = await security.ValidateClientAsync(Request, videoId);
             if (!clientInfo.IsValid)
             {
                 return Unauthorized("Invalid client or token");
             }
 
             // Get video metadata
-            var videoMeta = await _metadata.GetVideoMetadataAsync(videoId);
+            var videoMeta = await metadata.GetVideoMetadataAsync(videoId);
             if (videoMeta == null)
             {
                 return NotFound($"Video {videoId} not found");
@@ -89,13 +68,13 @@ public class VideoStreamController : ControllerBase
             Response.Headers.Append("Access-Control-Allow-Origin", "*");
 
             // Log analytics
-            await _analytics.LogPlaylistRequestAsync(videoId, clientInfo, deviceCapabilities);
+            await analytics.LogPlaylistRequestAsync(videoId, clientInfo, deviceCapabilities);
 
             return Content(playlist);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error generating master playlist for video: {VideoId}", videoId);
+            logger.LogError(ex, "Error generating master playlist for video: {VideoId}", videoId);
             return StatusCode(500, "Failed to generate playlist");
         }
     }
@@ -114,13 +93,13 @@ public class VideoStreamController : ControllerBase
         {
             var cacheKey = $"playlist_{videoId}_{quality}_{startTime}_{segmentDuration}";
 
-            if (_cache.TryGetValue(cacheKey, out string cachedPlaylist))
+            if (cache.TryGetValue(cacheKey, out string cachedPlaylist))
             {
                 Response.ContentType = "application/vnd.apple.mpegurl";
                 return Content(cachedPlaylist);
             }
 
-            var videoMeta = await _metadata.GetVideoMetadataAsync(videoId);
+            var videoMeta = await metadata.GetVideoMetadataAsync(videoId);
             if (videoMeta == null) return NotFound();
 
             var qualityInfo = videoMeta.Qualities.FirstOrDefault(q => q.Label == quality);
@@ -129,7 +108,7 @@ public class VideoStreamController : ControllerBase
             var playlist = await GenerateSegmentPlaylistAsync(videoId, qualityInfo, startTime, segmentDuration);
 
             // Cache playlist for 5 minutes
-            _cache.Set(cacheKey, playlist, TimeSpan.FromMinutes(5));
+            cache.Set(cacheKey, playlist, TimeSpan.FromMinutes(5));
 
             Response.ContentType = "application/vnd.apple.mpegurl";
             Response.Headers.Append("Cache-Control", "max-age=300");
@@ -138,7 +117,7 @@ public class VideoStreamController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error generating segment playlist: {VideoId}/{Quality}", videoId, quality);
+            logger.LogError(ex, "Error generating segment playlist: {VideoId}/{Quality}", videoId, quality);
             return StatusCode(500);
         }
     }
@@ -161,13 +140,13 @@ public class VideoStreamController : ControllerBase
         try
         {
             // Validate access token
-            if (!await _security.ValidateSegmentAccessAsync(videoId, token, segmentIndex))
+            if (!await security.ValidateSegmentAccessAsync(videoId, token, segmentIndex))
             {
                 return Unauthorized("Invalid or expired token");
             }
 
             // Get optimal CDN endpoint
-            var cdnEndpoint = await _cdnManager.GetOptimalEndpointAsync(Request, videoId, quality);
+            var cdnEndpoint = await cdnManager.GetOptimalEndpointAsync(Request, videoId, quality);
 
             // Check if segment exists in cache or CDN
             var segmentPath = Path.Combine(_videoPath, "segments", videoId, quality, $"segment_{segmentIndex:D6}.ts");
@@ -175,7 +154,7 @@ public class VideoStreamController : ControllerBase
             if (!System.IO.File.Exists(segmentPath))
             {
                 // Try to fetch from CDN or generate on-the-fly
-                segmentPath = await _cdnManager.FetchOrGenerateSegmentAsync(videoId, quality, segmentIndex);
+                segmentPath = await cdnManager.FetchOrGenerateSegmentAsync(videoId, quality, segmentIndex);
                 if (segmentPath == null)
                 {
                     return NotFound($"Segment {segmentIndex} not available");
@@ -202,7 +181,7 @@ public class VideoStreamController : ControllerBase
             // Log segment access for analytics
             if (!preload)
             {
-                await _analytics.LogSegmentAccessAsync(videoId, quality, segmentIndex, Request);
+                await analytics.LogSegmentAccessAsync(videoId, quality, segmentIndex, Request);
             }
 
             // Stream the segment
@@ -213,7 +192,7 @@ public class VideoStreamController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error streaming segment: {VideoId}/{Quality}/{Index}", videoId, quality,
+            logger.LogError(ex, "Error streaming segment: {VideoId}/{Quality}/{Index}", videoId, quality,
                 segmentIndex);
             return StatusCode(500);
         }
@@ -243,7 +222,7 @@ public class VideoStreamController : ControllerBase
             }
 
             // Get video metadata and available formats
-            var videoMeta = await _metadata.GetVideoMetadataAsync(v);
+            var videoMeta = await metadata.GetVideoMetadataAsync(v);
             if (videoMeta == null)
             {
                 return NotFound($"Video {v} not found or unavailable");
@@ -263,14 +242,14 @@ public class VideoStreamController : ControllerBase
             }
 
             // Security and throttling checks
-            var accessResult = await _security.CheckVideoAccessAsync(v, Request, format);
+            var accessResult = await security.CheckVideoAccessAsync(v, Request, format);
             if (!accessResult.Allowed)
             {
                 return StatusCode(accessResult.StatusCode, accessResult.Message);
             }
 
             // Apply bandwidth throttling if needed
-            var throttleInfo = await _analytics.GetThrottleInfoAsync(Request, v);
+            var throttleInfo = await analytics.GetThrottleInfoAsync(Request, v);
 
             // Get video file path
             var filePath = GetFormatFilePath(v, format);
@@ -295,14 +274,14 @@ public class VideoStreamController : ControllerBase
             }
 
             // Log video start for analytics
-            await _analytics.LogVideoStartAsync(v, format, Request, accessResult.UserId);
+            await analytics.LogVideoStartAsync(v, format, Request, accessResult.UserId);
 
             // Stream full video with throttling
             return await StreamWithThrottling(filePath, fileInfo, throttleInfo);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error in watch endpoint: {VideoId}", v);
+            logger.LogError(ex, "Error in watch endpoint: {VideoId}", v);
             return StatusCode(500, "Playback error");
         }
     }
@@ -322,13 +301,13 @@ public class VideoStreamController : ControllerBase
             var recommendations = await AdaptiveBitrateManager.GetQualityRecommendationsAsync(request);
 
             // Log the recommendation request for ML training
-            await _analytics.LogQualityRecommendationAsync(request, recommendations);
+            await analytics.LogQualityRecommendationAsync(request, recommendations);
 
             return Ok(recommendations);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error generating quality recommendations");
+            logger.LogError(ex, "Error generating quality recommendations");
             return StatusCode(500);
         }
     }
@@ -348,16 +327,16 @@ public class VideoStreamController : ControllerBase
             }
 
             // Process and store analytics
-            await _analytics.ProcessPlaybackStatsAsync(stats, Request);
+            await analytics.ProcessPlaybackStatsAsync(stats, Request);
 
             // Update ABR algorithm with new data
-            await _abrManager.UpdateAlgorithmAsync(stats);
+            await abrManager.UpdateAlgorithmAsync(stats);
 
             return Ok(new { status = "success", message = "Stats recorded" });
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error processing playback stats");
+            logger.LogError(ex, "Error processing playback stats");
             return StatusCode(500);
         }
     }
@@ -377,7 +356,7 @@ public class VideoStreamController : ControllerBase
     {
         try
         {
-            var liveStream = await _metadata.GetLiveStreamAsync(streamId);
+            var liveStream = await metadata.GetLiveStreamAsync(streamId);
             if (liveStream == null || !liveStream.IsActive)
             {
                 return NotFound("Live stream not found or inactive");
@@ -423,13 +402,13 @@ public class VideoStreamController : ControllerBase
             await fileStream.CopyToAsync(Response.Body, HttpContext.RequestAborted);
 
             // Log live viewing analytics
-            await _analytics.LogLiveChunkAccessAsync(streamId, seq, quality!, Request);
+            await analytics.LogLiveChunkAccessAsync(streamId, seq, quality!, Request);
 
             return new EmptyResult();
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error serving live chunk: {StreamId}/{Seq}", streamId, seq);
+            logger.LogError(ex, "Error serving live chunk: {StreamId}/{Seq}", streamId, seq);
             return StatusCode(500);
         }
     }
@@ -452,10 +431,10 @@ public class VideoStreamController : ControllerBase
             }
 
             // Analyze user behavior to determine preload strategy
-            var preloadStrategy = await _analytics.GetPreloadStrategyAsync(request.VideoId, request.UserId, Request);
+            var preloadStrategy = await analytics.GetPreloadStrategyAsync(request.VideoId, request.UserId, Request);
 
             // Get segments to preload
-            var segmentsToPreload = await _abrManager.DeterminePreloadSegmentsAsync(request, preloadStrategy);
+            var segmentsToPreload = await abrManager.DeterminePreloadSegmentsAsync(request, preloadStrategy);
 
             // Return preload instructions to client
             var preloadResponse = new PreloadResponse
@@ -469,7 +448,7 @@ public class VideoStreamController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error generating preload response");
+            logger.LogError(ex, "Error generating preload response");
             return StatusCode(500);
         }
     }
@@ -491,12 +470,12 @@ public class VideoStreamController : ControllerBase
         {
             var cacheKey = $"storyboard_{videoId}_L{level}_{format}";
 
-            if (_cache.TryGetValue(cacheKey, out byte[] cachedStoryboard))
+            if (cache.TryGetValue(cacheKey, out byte[] cachedStoryboard))
             {
                 return File(cachedStoryboard, $"image/{format}");
             }
 
-            var videoMeta = await _metadata.GetVideoMetadataAsync(videoId);
+            var videoMeta = await metadata.GetVideoMetadataAsync(videoId);
             if (videoMeta == null) return NotFound();
 
             // Generate or retrieve storyboard
@@ -516,14 +495,14 @@ public class VideoStreamController : ControllerBase
             var storyboardData = await System.IO.File.ReadAllBytesAsync(storyboardPath);
 
             // Cache for 1 hour
-            _cache.Set(cacheKey, storyboardData, TimeSpan.FromHours(1));
+            cache.Set(cacheKey, storyboardData, TimeSpan.FromHours(1));
 
             Response.Headers.Append("Cache-Control", "public, max-age=3600");
             return File(storyboardData, $"image/{format}");
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error generating storyboard: {VideoId}", videoId);
+            logger.LogError(ex, "Error generating storyboard: {VideoId}", videoId);
             return StatusCode(500);
         }
     }
@@ -863,7 +842,7 @@ public class VideoStreamController : ControllerBase
     {
         // In production, this would interface with video processing services
         // For now, return null to indicate storyboard generation failed
-        _logger.LogWarning("Storyboard generation not implemented for video: {VideoId}", videoId);
+        logger.LogWarning("Storyboard generation not implemented for video: {VideoId}", videoId);
         return null;
     }
 
