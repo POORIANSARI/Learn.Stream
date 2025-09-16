@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("Learn.Stream")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+bc08e7c3407e371ab62c41646f091fcf6a217d63")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+4e97de0ed4a902a0e52dd4c260246fa1c02f3840")]
 [assembly: System.Reflection.AssemblyProductAttribute("Learn.Stream")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Learn.Stream")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
