@@ -10,7 +10,7 @@ public class Learn
     /// Each thread has its own copy, avoiding race conditions.
     /// Useful for thread-local state without explicit ThreadLocal wrapper.
     /// </summary>
-    [ThreadStatic] static int counter;
+    [ThreadStatic] private static int _counter;
 
     /// <summary>
     /// Demonstrates basic thread creation, starting, and synchronous waiting.
@@ -96,7 +96,7 @@ public class Learn
     /// </summary>
     public void Abort()
     {
-        Thread t = new Thread(() =>
+        var t = new Thread(() =>
         {
             while (true)
             {
@@ -141,9 +141,9 @@ public class Learn
     /// Interrupt() throws ThreadInterruptedException in waiting thread.
     /// Allows graceful cancellation of blocking operations.
     /// </summary>
-    void Interrupt()
+    private void Interrupt()
     {
-        Thread t = new Thread(() =>
+        var t = new Thread(() =>
         {
             try
             {
@@ -163,9 +163,9 @@ public class Learn
     /// IsAlive returns true while thread is running.
     /// Essential for thread lifecycle monitoring and debugging.
     /// </summary>
-    void CheckingIfThreadIsAlive()
+    private void CheckingIfThreadIsAlive()
     {
-        Thread t = new Thread(() => { });
+        var t = new Thread(() => { });
         t.Start();
         Console.WriteLine(t.IsAlive);
     }
@@ -175,9 +175,9 @@ public class Learn
     /// Each thread maintains separate counter instance.
     /// Eliminates need for synchronization in thread-local scenarios.
     /// </summary>
-    void SetThreadSafeCounter()
+    private void SetThreadSafeCounter()
     {
-        counter = 5; // Each thread has its own counter
+        _counter = 5; // Each thread has its own counter
     }
 
     /// <summary>
@@ -185,9 +185,9 @@ public class Learn
     /// Task.Run executes work on ThreadPool thread.
     /// Wait() blocks until task completes synchronously.
     /// </summary>
-    void CreateTask()
+    private void CreateTask()
     {
-        Task t = Task.Run(() => Console.WriteLine("Hello Task"));
+        var t = Task.Run(() => Console.WriteLine("Hello Task"));
         t.Wait();
     }
 
@@ -196,9 +196,9 @@ public class Learn
     /// Result property blocks until task completes and returns value.
     /// Preferred over Thread for operations needing return values.
     /// </summary>
-    void CreateTaskWithReturnValue()
+    private void CreateTaskWithReturnValue()
     {
-        Task<int> t = Task.Run(() => 42);
+        var t = Task.Run(() => 42);
         Console.WriteLine(t.Result);
     }
 
@@ -207,10 +207,10 @@ public class Learn
     /// WaitAll blocks until all specified tasks finish.
     /// Essential for coordinating parallel operations.
     /// </summary>
-    void WaitAll()
+    private void WaitAll()
     {
-        Task t1 = Task.Run(() => Thread.Sleep(1000));
-        Task t2 = Task.Run(() => Thread.Sleep(500));
+        var t1 = Task.Run(() => Thread.Sleep(1000));
+        var t2 = Task.Run(() => Thread.Sleep(500));
         Task.WaitAll(t1, t2);
     }
 
@@ -219,11 +219,11 @@ public class Learn
     /// WaitAny returns index of first completed task.
     /// Useful for timeout scenarios or race conditions.
     /// </summary>
-    void WaitAny()
+    private void WaitAny()
     {
-        Task t1 = Task.Run(() => Thread.Sleep(1000));
-        Task t2 = Task.Run(() => Thread.Sleep(500));
-        int finished = Task.WaitAny(t1, t2);
+        var t1 = Task.Run(() => Thread.Sleep(1000));
+        var t2 = Task.Run(() => Thread.Sleep(500));
+        var finished = Task.WaitAny(t1, t2);
         Console.WriteLine($"Task {finished} finished first");
     }
 
@@ -232,7 +232,7 @@ public class Learn
     /// Delay provides non-blocking wait unlike Thread.Sleep.
     /// Essential for responsive async programming.
     /// </summary>
-    async void Delay()
+    private async void Delay()
     {
         try
         {
@@ -249,7 +249,7 @@ public class Learn
     /// ContinueWith executes when antecedent task completes.
     /// Allows building complex async workflows.
     /// </summary>
-    void ContinueWith()
+    private void ContinueWith()
     {
         Task.Run(() => 1)
             .ContinueWith(t => Console.WriteLine($"Result: {t.Result}"));
@@ -260,7 +260,7 @@ public class Learn
     /// WhenAll returns task that completes when all input tasks finish.
     /// Preferred over WaitAll in async contexts.
     /// </summary>
-    void WhenAll()
+    private void WhenAll()
     {
         Task.WhenAll(Task.Delay(1000), Task.Delay(500));
     }
@@ -270,7 +270,7 @@ public class Learn
     /// WhenAny returns task that completes when first input task finishes.
     /// Useful for timeout patterns and competitive scenarios.
     /// </summary>
-    void WhenAny()
+    private void WhenAny()
     {
         var first = Task.WhenAny(Task.Delay(1000), Task.Delay(500));
     }
@@ -280,7 +280,7 @@ public class Learn
     /// CancellationTokenSource provides cancellation control mechanism.
     /// Essential pattern for graceful operation termination.
     /// </summary>
-    void CancellationTokenSourceCreate()
+    private void CancellationTokenSourceCreate()
     {
         var cts = new CancellationTokenSource();
         var t = Task.Run(() =>
@@ -297,9 +297,9 @@ public class Learn
     /// LongRunning hint suggests dedicated thread allocation.
     /// Provides more control over task creation behavior.
     /// </summary>
-    void TaskFactoryCreate()
+    private void TaskFactoryCreate()
     {
-        Task t = Task.Factory.StartNew(() => Thread.Sleep(1000), TaskCreationOptions.LongRunning);
+        var t = Task.Factory.StartNew(() => Thread.Sleep(1000), TaskCreationOptions.LongRunning);
         t.Wait();
     }
 
@@ -308,9 +308,9 @@ public class Learn
     /// Status property reflects current task lifecycle state.
     /// Essential for debugging and progress tracking.
     /// </summary>
-    void TaskStatus()
+    private void TaskStatus()
     {
-        Task t = Task.Run(() => Thread.Sleep(100));
+        var t = Task.Run(() => Thread.Sleep(100));
         Console.WriteLine(t.Status); // Running, RanToCompletion, Faulted
     }
 
@@ -319,9 +319,9 @@ public class Learn
     /// IsCompleted returns true when task finishes (success or failure).
     /// Non-blocking way to check task completion status.
     /// </summary>
-    void TaskStatus2()
+    private void TaskStatus2()
     {
-        Task t = Task.Run(() => Thread.Sleep(100));
+        var t = Task.Run(() => Thread.Sleep(100));
         Console.WriteLine(t.IsCompleted);
     }
 
@@ -330,10 +330,10 @@ public class Learn
     /// Result blocks calling thread until task completes.
     /// Can cause deadlocks in UI or ASP.NET contexts.
     /// </summary>
-    void TaskResultBlocks()
+    private void TaskResultBlocks()
     {
-        Task<int> t = Task.Run(() => 10);
-        int result = t.Result; // Blocks until done
+        var t = Task.Run(() => 10);
+        var result = t.Result; // Blocks until done
     }
 
     /// <summary>
@@ -341,7 +341,7 @@ public class Learn
     /// Parallel.Invoke runs actions concurrently on available threads.
     /// Simplifies parallel execution of heterogeneous work.
     /// </summary>
-    void ParallelInvoke()
+    private void ParallelInvoke()
     {
         Parallel.Invoke(
             () => Console.WriteLine("Task1"),
@@ -354,7 +354,7 @@ public class Learn
     /// MaxDegreeOfParallelism limits number of concurrent threads.
     /// Essential for resource-bounded parallel processing.
     /// </summary>
-    void ParallelFor()
+    private void ParallelFor()
     {
         Parallel.For(0, 10, new ParallelOptions { MaxDegreeOfParallelism = 2 }, i => Console.WriteLine(i));
     }
@@ -364,7 +364,7 @@ public class Learn
     /// ForEach automatically partitions work across available threads.
     /// Ideal for CPU-intensive operations on collections.
     /// </summary>
-    void ParallelForEach()
+    private void ParallelForEach()
     {
         Parallel.ForEach(new[] { 1, 2, 3 }, i => Console.WriteLine(i));
     }
@@ -374,7 +374,7 @@ public class Learn
     /// AsParallel() enables automatic parallelization of LINQ operations.
     /// Combines functional programming with parallel execution.
     /// </summary>
-    void PLinq()
+    private void PLinq()
     {
         var result = (from i in Enumerable.Range(1, 10).AsParallel()
             select i * i).ToList();
@@ -385,10 +385,10 @@ public class Learn
     /// Wait(timeout) returns false if task doesn't complete in time.
     /// Prevents indefinite blocking in unreliable scenarios.
     /// </summary>
-    void TaskWaitTimeout()
+    private void TaskWaitTimeout()
     {
         var t = Task.Delay(2000);
-        bool finished = t.Wait(1000); // false if timeout
+        var finished = t.Wait(1000); // false if timeout
     }
 
     /// <summary>
@@ -396,7 +396,7 @@ public class Learn
     /// TaskScheduler controls where continuation executes.
     /// Important for UI thread marshalling and context control.
     /// </summary>
-    void TaskContinueWithWithScheduler()
+    private void TaskContinueWithWithScheduler()
     {
         Task.Run(() => Console.WriteLine("A"))
             .ContinueWith(t => Console.WriteLine("B"), TaskScheduler.Current);
@@ -407,9 +407,9 @@ public class Learn
     /// AggregateException wraps exceptions from faulted tasks.
     /// Essential for robust error handling in parallel code.
     /// </summary>
-    void ExceptionThrow()
+    private void ExceptionThrow()
     {
-        Task t = Task.Run(() => throw new InvalidOperationException());
+        var t = Task.Run(() => throw new InvalidOperationException());
         try
         {
             t.Wait();
@@ -425,7 +425,7 @@ public class Learn
     /// Async methods enable non-blocking asynchronous programming.
     /// Foundation of modern .NET asynchronous patterns.
     /// </summary>
-    async Task<int> GetDataAsync()
+    private async Task<int> GetDataAsync()
     {
         await Task.Delay(1000);
         return 42;
@@ -436,9 +436,9 @@ public class Learn
     /// Async lambdas enable asynchronous operations in functional contexts.
     /// Useful for event handlers and callback scenarios.
     /// </summary>
-    async Task AsyncLambda()
+    private async Task AsyncLambda()
     {
-        Func<Task> asyncAction = async () => await Task.Delay(500);
+        var asyncAction = async () => await Task.Delay(500);
         await asyncAction();
     }
 
@@ -447,7 +447,7 @@ public class Learn
     /// Avoids capturing synchronization context, improving performance.
     /// Critical pattern for avoiding deadlocks in library methods.
     /// </summary>
-    async Task ConfigureAwait()
+    private async Task ConfigureAwait()
     {
         await Task.Delay(500).ConfigureAwait(false); // Avoid context capture
     }
@@ -457,7 +457,7 @@ public class Learn
     /// Starts task without waiting for completion or result.
     /// Useful for background operations that don't need coordination.
     /// </summary>
-    void FireAndForget()
+    private void FireAndForget()
     {
         _ = Task.Run(async () => await Task.Delay(1000));
     }
@@ -467,7 +467,7 @@ public class Learn
     /// Wait() can deadlock in UI/ASP.NET contexts with sync context.
     /// Await preserves async nature and prevents context deadlocks.
     /// </summary>
-    async Task AvoidBlockingAsync()
+    private async Task AvoidBlockingAsync()
     {
         // Bad
         Task.Delay(1000).Wait(); // Can deadlock
@@ -480,9 +480,9 @@ public class Learn
     /// Interlocked provides atomic operations without explicit locking.
     /// Guarantees thread safety with minimal performance overhead.
     /// </summary>
-    void ThreadSafeCounterWithInterlocked()
+    private void ThreadSafeCounterWithInterlocked()
     {
-        int counter = 0;
+        var counter = 0;
         Parallel.For(0, 1000, i => Interlocked.Increment(ref counter));
         Console.WriteLine(counter); // Always 1000
     }
@@ -492,9 +492,9 @@ public class Learn
     /// CompareExchange atomically compares and conditionally updates value.
     /// Foundation of lock-free programming algorithms.
     /// </summary>
-    void InterlockedCompareExchange()
+    private void InterlockedCompareExchange()
     {
-        int value = 0;
+        var value = 0;
         Interlocked.CompareExchange(ref value, 1, 0); // Sets value to 1 if currently 0
     }
 
@@ -503,9 +503,9 @@ public class Learn
     /// Add atomically adds value to variable without race conditions.
     /// More efficient than lock-based arithmetic operations.
     /// </summary>
-    void InterlockedAdd()
+    private void InterlockedAdd()
     {
-        int total = 0;
+        var total = 0;
         Interlocked.Add(ref total, 5);
     }
 
@@ -514,11 +514,11 @@ public class Learn
     /// Local copy prevents closure capture issues in loops.
     /// Critical pattern for avoiding unexpected behavior in parallel code.
     /// </summary>
-    void AvoidCapturingLoopVariables()
+    private void AvoidCapturingLoopVariables()
     {
-        for (int i = 0; i < 5; i++)
+        for (var i = 0; i < 5; i++)
         {
-            int copy = i;
+            var copy = i;
             Task.Run(() => Console.WriteLine(copy));
         }
     }
@@ -528,9 +528,9 @@ public class Learn
     /// Lazy<T> ensures single initialization across multiple threads.
     /// Eliminates race conditions in singleton and expensive object creation.
     /// </summary>
-    void ThreadSafeLazyInitialization()
+    private void ThreadSafeLazyInitialization()
     {
-        Lazy<MyClass> lazy = new Lazy<MyClass>(() => new MyClass(), true);
+        var lazy = new Lazy<MyClass>(() => new MyClass(), true);
     }
 
     /// <summary>
@@ -538,7 +538,7 @@ public class Learn
     /// Never block on async methods using .Result or .Wait().
     /// Always use await to maintain async chain integrity.
     /// </summary>
-    async Task AvoidDeadlocksWithAsync()
+    private async Task AvoidDeadlocksWithAsync()
     {
         // Never do:
         Task.Run(() => asyncMethod().Result);
@@ -552,7 +552,7 @@ public class Learn
     /// FromResult creates already-completed task with specified result.
     /// Useful for implementing async interfaces synchronously.
     /// </summary>
-    Task<int> asyncMethod()
+    private Task<int> asyncMethod()
     {
         return Task.FromResult(42);
     }
@@ -562,7 +562,7 @@ public class Learn
     /// Uses Task.Run for CPU-bound work in async context.
     /// Shows proper async/await pattern usage.
     /// </summary>
-    async Task<int> asyncMethod2()
+    private async Task<int> asyncMethod2()
     {
         return await Task.Run(() => 42);
     }
@@ -572,7 +572,7 @@ public class Learn
     /// Allows creating tasks completed by external events or conditions.
     /// Essential for bridging callback-based APIs with Task-based async.
     /// </summary>
-    async Task TaskCompletionSource()
+    private async Task TaskCompletionSource()
     {
         var tcs = new TaskCompletionSource<int>();
         Task.Run(() => tcs.SetResult(42));
@@ -584,7 +584,7 @@ public class Learn
     /// WaitAsync() allows non-blocking acquisition of semaphore.
     /// Only async-compatible synchronization primitive in .NET.
     /// </summary>
-    async Task AsyncLockWithSemaphoreSlim()
+    private async Task AsyncLockWithSemaphoreSlim()
     {
         var sem = new SemaphoreSlim(1, 1);
         await sem.WaitAsync();
@@ -603,7 +603,7 @@ public class Learn
     /// ConcurrentDictionary provides atomic operations without external locking.
     /// TryAdd ensures thread-safe insertion with existence checking.
     /// </summary>
-    void ThreadSafeDictionary()
+    private void ThreadSafeDictionary()
     {
         var dict = new ConcurrentDictionary<int, string>();
         dict.TryAdd(1, "A");
@@ -614,7 +614,7 @@ public class Learn
     /// ValueTask reduces allocation overhead for frequently-called async methods.
     /// Especially beneficial when result is often available synchronously.
     /// </summary>
-    async ValueTask<int> UsingValueTaskForPerformance()
+    private async ValueTask<int> UsingValueTaskForPerformance()
     {
         await Task.Delay(100);
         return 10;
@@ -625,7 +625,7 @@ public class Learn
     /// CancellationToken enables cooperative cancellation of async operations.
     /// Essential for responsive cancellation in long-running async work.
     /// </summary>
-    async Task CancellationTokenInAsync()
+    private async Task CancellationTokenInAsync()
     {
         var cts = new CancellationTokenSource();
         await Task.Delay(1000, cts.Token);
@@ -636,9 +636,9 @@ public class Learn
     /// IAsyncEnumerable enables async iteration over data sequences.
     /// Ideal for processing streaming data or paged API results.
     /// </summary>
-    async IAsyncEnumerable<int> GetNumbersAsync()
+    private async IAsyncEnumerable<int> GetNumbersAsync()
     {
-        for (int i = 0; i < 5; i++)
+        for (var i = 0; i < 5; i++)
         {
             await Task.Delay(100);
             yield return i;
@@ -650,9 +650,9 @@ public class Learn
     /// ThreadLocal<T> provides per-thread storage without static issues.
     /// Random class is not thread-safe, requiring thread-local instances.
     /// </summary>
-    void ThreadSafeRandom()
+    private void ThreadSafeRandom()
     {
-        ThreadLocal<Random> rnd = new ThreadLocal<Random>(() => new Random());
+        var rnd = new ThreadLocal<Random>(() => new Random());
         Console.WriteLine(rnd.Value.Next());
     }
 
@@ -661,9 +661,9 @@ public class Learn
     /// Lock provides exclusive access to shared resources.
     /// Syntactic sugar over Monitor.Enter/Exit with exception safety.
     /// </summary>
-    Task SimpleLock()
+    private Task SimpleLock()
     {
-        object _lock = new object();
+        var _lock = new object();
         lock (_lock)
         {
             // Critical section
@@ -676,9 +676,9 @@ public class Learn
     /// Monitor.Enter/Exit provides lower-level lock control.
     /// Allows timeout specifications and advanced synchronization patterns.
     /// </summary>
-    void MonitorEnterExit()
+    private void MonitorEnterExit()
     {
-        object _lock = new object();
+        var _lock = new object();
 
         Monitor.Enter(_lock);
         try
@@ -696,9 +696,9 @@ public class Learn
     /// TryEnter attempts lock acquisition without indefinite blocking.
     /// Essential for avoiding deadlocks and implementing timeout logic.
     /// </summary>
-    void MonitorTryEnter()
+    private void MonitorTryEnter()
     {
-        object _lock = new object();
+        var _lock = new object();
 
         if (Monitor.TryEnter(_lock, 1000))
         {
@@ -718,9 +718,9 @@ public class Learn
     /// ReaderWriterLockSlim allows concurrent readers or exclusive writers.
     /// Improves performance in read-heavy, infrequent-write scenarios.
     /// </summary>
-    void ReaderWriterLockSlim()
+    private void ReaderWriterLockSlim()
     {
-        ReaderWriterLockSlim rw = new ReaderWriterLockSlim();
+        var rw = new ReaderWriterLockSlim();
         rw.EnterReadLock();
         try
         {
@@ -737,9 +737,9 @@ public class Learn
     /// UpgradeableReadLock allows upgrading to write lock when needed.
     /// Prevents common reader-writer deadlock scenarios.
     /// </summary>
-    void UpgradeableReadLock()
+    private void UpgradeableReadLock()
     {
-        ReaderWriterLockSlim rw = new ReaderWriterLockSlim();
+        var rw = new ReaderWriterLockSlim();
         rw.EnterUpgradeableReadLock();
         try
         {
@@ -757,9 +757,9 @@ public class Learn
     /// Exchange atomically sets value and returns original.
     /// Eliminates locking overhead in simple update scenarios.
     /// </summary>
-    void LockFreeProgrammingWithInterlocked()
+    private void LockFreeProgrammingWithInterlocked()
     {
-        int value = 0;
+        var value = 0;
         Interlocked.Exchange(ref value, 5);
     }
 
@@ -768,12 +768,12 @@ public class Learn
     /// Named mutexes provide synchronization across application instances.
     /// Essential for single-instance applications and shared resources.
     /// </summary>
-    void Mutex()
+    private void Mutex()
     {
         //named
         //Mutex m = new Mutex(false, "MyAppMutex");
 
-        using (Mutex m = new Mutex(false, "GlobalMutex"))
+        using (var m = new Mutex(false, "GlobalMutex"))
         {
             m.WaitOne();
             // Critical section
@@ -786,10 +786,10 @@ public class Learn
     /// SpinLock busy-waits instead of blocking for very short waits.
     /// More efficient than traditional locks for brief operations.
     /// </summary>
-    void SpinLock()
+    private void SpinLock()
     {
-        SpinLock spin = new SpinLock();
-        bool lockTaken = false;
+        var spin = new SpinLock();
+        var lockTaken = false;
         try
         {
             spin.Enter(ref lockTaken);
@@ -805,7 +805,7 @@ public class Learn
     /// Reduces lock contention by checking condition before acquiring lock.
     /// Classic optimization pattern but error-prone without proper implementation.
     /// </summary>
-    void DoubleCheckedLocking()
+    private void DoubleCheckedLocking()
     {
         // object _lock = new object();
         //
@@ -821,10 +821,10 @@ public class Learn
     /// Multiple locks acquired in different order can cause deadlocks.
     /// Always acquire locks in consistent order to prevent deadlocks.
     /// </summary>
-    void CauseDeadlocks()
+    private void CauseDeadlocks()
     {
-        object obj1 = new object();
-        object obj2 = new object();
+        var obj1 = new object();
+        var obj2 = new object();
 
         lock (obj1)
         {
@@ -839,9 +839,9 @@ public class Learn
     /// Wait releases lock and blocks until Pulse notification.
     /// Classical producer-consumer synchronization mechanism.
     /// </summary>
-    void MonitorWaitPulse()
+    private void MonitorWaitPulse()
     {
-        object _lock = new object();
+        var _lock = new object();
 
         lock (_lock)
         {
@@ -855,11 +855,11 @@ public class Learn
     /// ConcurrentQueue provides lock-free enqueue/dequeue operations.
     /// Ideal for producer-consumer scenarios with ordered processing.
     /// </summary>
-    void ConcurrentQueue()
+    private void ConcurrentQueue()
     {
-        ConcurrentQueue<int> q = new ConcurrentQueue<int>();
+        var q = new ConcurrentQueue<int>();
         q.Enqueue(1);
-        q.TryDequeue(out int val);
+        q.TryDequeue(out var val);
     }
 
     /// <summary>
@@ -867,11 +867,11 @@ public class Learn
     /// ConcurrentStack provides lock-free push/pop operations.
     /// Useful for work-stealing algorithms and temporary storage.
     /// </summary>
-    void ConcurrentStack()
+    private void ConcurrentStack()
     {
-        ConcurrentStack<int> stack = new ConcurrentStack<int>();
+        var stack = new ConcurrentStack<int>();
         stack.Push(1);
-        stack.TryPop(out int val);
+        stack.TryPop(out var val);
     }
 
     /// <summary>
@@ -879,11 +879,11 @@ public class Learn
     /// ConcurrentBag optimized for scenarios where same thread produces and consumes.
     /// Provides excellent performance for work-stealing patterns.
     /// </summary>
-    void ConcurrentBag()
+    private void ConcurrentBag()
     {
-        ConcurrentBag<int> bag = new ConcurrentBag<int>();
+        var bag = new ConcurrentBag<int>();
         bag.Add(1);
-        bag.TryTake(out int val);
+        bag.TryTake(out var val);
     }
 
     /// <summary>
@@ -891,9 +891,9 @@ public class Learn
     /// ConcurrentDictionary provides lock-free key-value operations.
     /// TryUpdate ensures atomic conditional updates.
     /// </summary>
-    void ConcurrentDictionary()
+    private void ConcurrentDictionary()
     {
-        ConcurrentDictionary<int, string> dict = new ConcurrentDictionary<int, string>();
+        var dict = new ConcurrentDictionary<int, string>();
         dict.TryAdd(1, "A");
         dict.TryUpdate(1, "B", "A");
     }
@@ -903,9 +903,9 @@ public class Learn
     /// BlockingCollection provides blocking enumeration with completion signaling.
     /// Essential for bounded producer-consumer scenarios.
     /// </summary>
-    void BlockingCollection()
+    private void BlockingCollection()
     {
-        BlockingCollection<int> bc = new BlockingCollection<int>();
+        var bc = new BlockingCollection<int>();
         Task.Run(() =>
         {
             foreach (var item in bc.GetConsumingEnumerable())
@@ -920,7 +920,7 @@ public class Learn
     /// Immutable collections eliminate need for synchronization.
     /// Changes create new instances, preserving thread safety.
     /// </summary>
-    void ImmutableCollections()
+    private void ImmutableCollections()
     {
         var list = ImmutableList<int>.Empty.Add(1);
     }
@@ -930,7 +930,7 @@ public class Learn
     /// Partitioner.Create provides custom work distribution strategies.
     /// Improves load balancing and reduces overhead.
     /// </summary>
-    void PartitionersForParallelForEach()
+    private void PartitionersForParallelForEach()
     {
         var rangePartitioner = Partitioner.Create(0, 1000);
         Parallel.ForEach(rangePartitioner, (range) => { });
@@ -941,9 +941,9 @@ public class Learn
     /// Combines parallel execution with thread-safe collection operations.
     /// Demonstrates real-world concurrent programming patterns.
     /// </summary>
-    void ThreadSafeQueueExample()
+    private void ThreadSafeQueueExample()
     {
-        ConcurrentQueue<int> queue = new ConcurrentQueue<int>();
+        var queue = new ConcurrentQueue<int>();
         Parallel.For(0, 1000, i => queue.Enqueue(i));
     }
 
@@ -954,14 +954,14 @@ public class Learn
     /// Producer adds items while consumer processes them concurrently.
     /// Essential pattern for decoupling production from consumption.
     /// </summary>
-    void ProducerConsumerPattern()
+    private void ProducerConsumerPattern()
     {
         var bc = new BlockingCollection<int>(boundedCapacity: 100);
         
         // Producer
         Task.Run(() =>
         {
-            for (int i = 0; i < 10; i++)
+            for (var i = 0; i < 10; i++)
             {
                 bc.Add(i);
                 Thread.Sleep(100);
@@ -984,7 +984,7 @@ public class Learn
     /// CancelAfter provides time-based cancellation without manual timer.
     /// Useful for implementing operation timeouts automatically.
     /// </summary>
-    void AutoCancellationWithTimeout()
+    private void AutoCancellationWithTimeout()
     {
         var cts = new CancellationTokenSource();
         cts.CancelAfter(TimeSpan.FromSeconds(5)); // auto-cancel after 5s
@@ -1003,9 +1003,9 @@ public class Learn
     /// MaxDegreeOfParallelism controls maximum concurrent thread usage.
     /// Essential for managing system resource consumption.
     /// </summary>
-    void LimitParallelism()
+    private void LimitParallelism()
     {
-        ParallelOptions po = new ParallelOptions { MaxDegreeOfParallelism = 4 };
+        var po = new ParallelOptions { MaxDegreeOfParallelism = 4 };
         Parallel.For(0, 100, po, i => 
         {
             Console.WriteLine($"Processing {i} on thread {Thread.CurrentThread.ManagedThreadId}");
@@ -1018,9 +1018,9 @@ public class Learn
     /// ThreadLocal provides thread-specific instances without static limitations.
     /// Eliminates race conditions in thread-specific state management.
     /// </summary>
-    void ThreadLocalStorage()
+    private void ThreadLocalStorage()
     {
-        ThreadLocal<int> localData = new ThreadLocal<int>(() => Thread.CurrentThread.ManagedThreadId);
+        var localData = new ThreadLocal<int>(() => Thread.CurrentThread.ManagedThreadId);
         
         Parallel.For(0, 5, i =>
         {
@@ -1035,7 +1035,7 @@ public class Learn
     /// Task.Run moves CPU-intensive work to background threads.
     /// Critical pattern for maintaining responsive user interfaces.
     /// </summary>
-    async Task AvoidBlockingUIThread()
+    private async Task AvoidBlockingUIThread()
     {
         // Instead of blocking UI thread with CPU work
         var result = await Task.Run(() =>
@@ -1053,7 +1053,7 @@ public class Learn
     /// Represents CPU-bound work that should run on background thread.
     /// Demonstrates work suitable for Task.Run offloading.
     /// </summary>
-    int ExpensiveComputation()
+    private int ExpensiveComputation()
     {
         Thread.Sleep(2000); // Simulate heavy computation
         return 42;
@@ -1064,7 +1064,7 @@ public class Learn
     /// SynchronizationContext.Post schedules work on original context.
     /// Essential for updating UI from background threads safely.
     /// </summary>
-    void UseSynchronizationContext()
+    private void UseSynchronizationContext()
     {
         var context = SynchronizationContext.Current;
         
@@ -1087,13 +1087,13 @@ public class Learn
     /// Short lock duration reduces contention and improves throughput.
     /// Shows preparation outside lock and minimal work inside.
     /// </summary>
-    void AvoidLockContention()
+    private void AvoidLockContention()
     {
-        object _lock = new object();
+        var _lock = new object();
         var data = new List<string>();
         
         // Prepare work outside lock
-        string newItem = "Prepared item";
+        var newItem = "Prepared item";
         
         // Keep critical section short
         lock (_lock)
@@ -1107,7 +1107,7 @@ public class Learn
     /// Lazy<T> with thread-safety ensures single instance creation.
     /// Eliminates double-checked locking complexity and errors.
     /// </summary>
-    void ThreadSafeLazySingleton()
+    private void ThreadSafeLazySingleton()
     {
         // Thread-safe singleton using Lazy<T>
         var instance = MySingleton.Instance;
@@ -1119,7 +1119,7 @@ public class Learn
     /// Parallel operations can throw AggregateException with multiple inner exceptions.
     /// Proper handling prevents silent failures in parallel code.
     /// </summary>
-    void ExceptionHandlingInParallel()
+    private void ExceptionHandlingInParallel()
     {
         try
         {
@@ -1143,7 +1143,7 @@ public class Learn
     /// CreateLinkedTokenSource combines multiple cancellation sources.
     /// Enables hierarchical cancellation in complex async operations.
     /// </summary>
-    async Task LinkedCancellationTokens()
+    private async Task LinkedCancellationTokens()
     {
         var parentCts = new CancellationTokenSource();
         var childCts = new CancellationTokenSource();
@@ -1166,7 +1166,7 @@ public class Learn
     /// Combines IAsyncEnumerable with CancellationToken for responsive iteration.
     /// Shows modern async streaming pattern with cancellation support.
     /// </summary>
-    async Task ConsumeAsyncEnumerable()
+    private async Task ConsumeAsyncEnumerable()
     {
         var cts = new CancellationTokenSource(TimeSpan.FromSeconds(2));
         
@@ -1181,7 +1181,7 @@ public class Learn
     /// TaskScheduler controls where and how tasks execute.
     /// Useful for UI thread scheduling or custom execution policies.
     /// </summary>
-    void CustomTaskScheduler()
+    private void CustomTaskScheduler()
     {
         var task = Task.Factory.StartNew(() =>
         {
@@ -1196,7 +1196,7 @@ public class Learn
     /// DisposeAsync enables proper cleanup of async resources.
     /// Critical for preventing resource leaks in async scenarios.
     /// </summary>
-    async Task AsyncDisposablePattern()
+    private async Task AsyncDisposablePattern()
     {
         await using var resource = new AsyncResource();
         // Use resource
@@ -1209,22 +1209,22 @@ public class Learn
     /// Volatile ensures reads/writes aren't optimized away or reordered.
     /// Important for lock-free algorithms and memory barriers.
     /// </summary>
-    void VolatileKeyword()
-    {
-        // This would typically be a field
-        volatile bool isComplete = false;
-        
-        Task.Run(() =>
-        {
-            Thread.Sleep(1000);
-            isComplete = true; // Volatile write
-        });
-        
-        // Volatile read in loop
-        while (!isComplete)
-        {
-            Thread.Sleep(10);
-        }
+    private void VolatileKeyword()
+     {
+    //     // This would typically be a field
+    //     volatile bool isComplete = false;
+    //     
+    //     Task.Run(() =>
+    //     {
+    //         Thread.Sleep(1000);
+    //         isComplete = true; // Volatile write
+    //     });
+    //     
+    //     // Volatile read in loop
+    //     while (!isComplete)
+    //     {
+    //         Thread.Sleep(10);
+    //     }
     }
 
     /// <summary>
@@ -1232,10 +1232,10 @@ public class Learn
     /// Thread.MemoryBarrier prevents instruction reordering across barrier.
     /// Low-level synchronization primitive for lock-free algorithms.
     /// </summary>
-    void MemoryBarriers()
+    private void MemoryBarriers()
     {
-        int data = 0;
-        bool ready = false;
+        var data = 0;
+        var ready = false;
         
         Task.Run(() =>
         {
@@ -1257,7 +1257,7 @@ public class Learn
     /// AsyncLocal maintains context through async call chains.
     /// Useful for correlation IDs, security context, or tracing data.
     /// </summary>
-    async Task AsyncLocalContext()
+    private async Task AsyncLocalContext()
     {
         var asyncLocal = new AsyncLocal<string>();
         asyncLocal.Value = "Context Data";
@@ -1270,6 +1270,7 @@ public class Learn
         });
     }
 }
+
 
 /// <summary>
 /// Thread-safe singleton implementation using Lazy<T>.
