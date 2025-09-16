@@ -124,6 +124,7 @@ public class Learn
     /// </summary>
     public void SetPriority()
     {
+        var tread = new Thread(c=> Console.Write("HERE"));
         var t = new Thread(param => Console.WriteLine(Thread.CurrentThread.Name!, param))
         {
             Priority = ThreadPriority.Highest
